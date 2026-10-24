@@ -1,0 +1,91 @@
+---
+import { Picture } from 'astro:assets';
+import fixture from '../assets/fixture.png';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Astro 7.4.2 Picture density reproduction</title>
+  </head>
+  <body>
+    <main>
+      <h1>Astro 7.4.2 Picture density reproduction</h1>
+      <p>
+        A candidate with no descriptor is equivalent to <code>1x</code>.
+        Each density should appear only once in a <code>&lt;source&gt;</code> element's <code>srcset</code>.
+      </p>
+
+      <section data-case="with-one">
+        <h2><code>{'densities={[1, 2]}'}</code></h2>
+        <Picture
+          src={fixture}
+          width={400}
+          height={280}
+          densities={[1, 2]}
+          formats={['webp']}
+          loading="eager"
+          alt="Generated gradient and checkerboard fixture"
+        />
+        <h3>Actual source srcset</h3>
+        <p><code data-output="descriptors"></code></p>
+        <pre><code data-output="source"></code></pre>
+        <h3>Actual fallback img srcset</h3>
+        <pre><code data-output="image"></code></pre>
+      </section>
+
+      <section data-case="without-one">
+        <h2>Control: <code>{'densities={[2]}'}</code></h2>
+        <p>The source retains its base candidate when there is no explicit <code>1x</code> candidate.</p>
+        <Picture
+          src={fixture}
+          width={400}
+          height={280}
+          densities={[2]}
+          formats={['webp']}
+          loading="eager"
+          alt="Generated gradient and checkerboard fixture"
+        />
+        <h3>Actual source srcset</h3>
+        <p><code data-output="descriptors"></code></p>
+        <pre><code data-output="source"></code></pre>
+        <h3>Actual fallback img srcset</h3>
+        <pre><code data-output="image"></code></pre>
+      </section>
+    </main>
+  </body>
+</html>
+
+<script>
+  for (const section of document.querySelectorAll('section[data-case]')) {
+    const source = section.querySelector('source');
+    const image = section.querySelector('img');
+    const sourceOutput = section.querySelector('[data-output="source"]');
+    const imageOutput = section.querySelector('[data-output="image"]');
+    const descriptors = section.querySelector('[data-output="descriptors"]');
+
+    if (source && image && sourceOutput && imageOutput && descriptors) {
+      const srcset = source.getAttribute('srcset') ?? '';
+      sourceOutput.textContent = srcset.split(', ').join(',\n');
+      imageOutput.textContent = (image.getAttribute('srcset') ?? '').split(', ').join(',\n');
+      descriptors.textContent = srcset
+        .split(',')
+        .map((candidate) => candidate.trim().split(/\s+/).slice(1).join(' ') || '(no descriptor = 1x)')
+        .join(', ');
+    }
+  }
+</script>
+
+<style>
+  pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+</style>
